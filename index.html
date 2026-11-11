@@ -1,0 +1,29 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>الهروب من السجن | Prison Escape</title>
+<link rel="stylesheet" href="https://pyscript.net/releases/2024.1.1/core.css">
+<script type="module" src="https://pyscript.net/releases/2024.1.1/core.js"></script>
+<style>
+*{box-sizing:border-box}body{margin:0;background:linear-gradient(135deg,#111a22,#263b49);color:#fff;font-family:system-ui;text-align:center;padding:18px}
+main{max-width:960px;margin:auto}h1{color:#ffb36b;margin:8px}p{color:#d5e0e5}
+canvas{width:100%;height:auto;border:3px solid #718692;border-radius:14px;background:#18232e;touch-action:none}
+button{border:0;border-radius:10px;padding:12px 22px;background:#f28b32;color:#1b2025;font-weight:bold;font-size:16px;margin:12px;cursor:pointer}
+.note{font-size:13px;color:#aebdc5}
+</style>
+</head>
+<body><main>
+<h1>🔐 الهروب من السجن</h1>
+<p>ساعدي البطلة في جمع الأدوات والوصول إلى بوابة الخروج. استخدمي الأسهم أو WASD.</p>
+<canvas id="game" width="900" height="540"></canvas><br>
+<button id="restart">إعادة اللعب</button>
+<p class="note">نسخة تجريبية تعليمية — اللعبة مكتوبة بلغة Python وتعمل داخل المتصفح باستخدام Pyodide.</p>
+</main>
+<py-config>
+packages = []
+[[fetch]]
+files = ["./main.py"]
+</py-config>
+<py-script src="./main.py"></py-script>
+</body></html>
