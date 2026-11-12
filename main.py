@@ -12,8 +12,17 @@ player = {"x": 90, "y": 430, "w": 34, "h": 48, "speed": 3.4}
 guard = {"x": 490, "y": 250, "dir": 1, "left": 420, "right": 690}
 items = [
     {"x": 245, "y": 430, "name": "مفتاح", "got": False},
-    {"x": 710, "y": 160, "name": "بطاقة", "got": False},
+    {"x": 710, "y": 270, "name": "بطاقة", "got": False},
 ]
+# Arcade laser barriers: each beam switches on and off at a different time.
+# The timing is intentionally readable so the player can learn the pattern.
+lasers = [
+    {"x1": 300, "x2": 790, "y": 205, "offset": 0, "period": 190, "on": 112},
+    {"x1": 300, "x2": 790, "y": 295, "offset": 62, "period": 190, "on": 112},
+    {"x1": 300, "x2": 790, "y": 385, "offset": 124, "period": 190, "on": 112},
+]
+checkpoint = {"x": 245, "y": 430}
+laser_hits = 0
 mission = 0
 message = "المهمة 1: ابحثي عن المفتاح الأصفر."
 message_timer = 0
@@ -63,15 +72,17 @@ def draw_person(x,y,guard=False):
         text("0726",x+17,y+29,7,"#733b16","center")
 
 def reset():
-    global mission, message, caught_timer, won, game_over
+    global mission, message, caught_timer, won, game_over, laser_hits
     player.update(x=90,y=430)
+    checkpoint.update(x=245,y=430)
+    laser_hits = 0
     for i in items: i["got"] = False
     guard.update(x=490,y=250,dir=1)
     mission=0; message="المهمة 1: ابحثي عن المفتاح الأصفر."
     caught_timer=0; won=False; game_over=False
 
 def update():
-    global tick, mission, message, message_timer, caught_timer, won, game_over
+    global tick, mission, message, message_timer, caught_timer, won, game_over, laser_hits
     tick += 1
     if game_over or won:
         return
@@ -90,15 +101,31 @@ def update():
         if not it["got"] and abs(player["x"]-it["x"])<35 and abs(player["y"]-it["y"])<38:
             it["got"]=True
             if idx==0:
-                mission=1; message="رائع! حصلتِ على المفتاح. ابحثي عن بطاقة المرور."
+                mission=1
+                checkpoint.update(x=245,y=430)
+                message="حصلتِ على المفتاح! اعبرِي أشعة الليزر الحمراء ثم اجمعي البطاقة."
             else:
-                mission=2; message="أحسنتِ! وصلتِ إلى بوابة الخروج."
-            message_timer=180
+                mission=2
+                checkpoint.update(x=710,y=270)
+                message="رائع! البطاقة معك. توجهي إلى بوابة EXIT."
+            message_timer=220
+    # Laser challenge: active beams are temporary arcade obstacles.
+    if mission == 1:
+        for beam in lasers:
+            active = ((tick + beam["offset"]) % beam["period"]) < beam["on"]
+            near_beam = abs(player["y"] - beam["y"]) < 13
+            inside_beam = beam["x1"] - 8 < player["x"] < beam["x2"] + 8
+            if active and near_beam and inside_beam:
+                laser_hits += 1
+                player["x"], player["y"] = checkpoint["x"], checkpoint["y"]
+                message = "لمستِ الليزر! أعيدي المحاولة وانتظري حتى ينطفئ."
+                message_timer = 150
+                break
     # guard contact pauses player briefly; arcade-style, no harmful detail
     if abs(player["x"]-guard["x"])<28 and abs(player["y"]-guard["y"])<35:
         caught_timer=90
-        player["x"],player["y"]=90,430
-        message="الحارس لاحظك! حاولي مرة ثانية وراقبي مساره."
+        player["x"],player["y"]=checkpoint["x"],checkpoint["y"]
+        message="الحارس لاحظك! عودي إلى نقطة البداية وحاولي مجدداً."
         message_timer=180
     if mission==2 and player["x"]>820 and player["y"]<220:
         won=True
@@ -125,6 +152,21 @@ def draw():
     # furniture
     rect(45,300,115,18,"#7c624b"); rect(52,318,8,48,"#6b513e"); rect(145,318,8,48,"#6b513e")
     rect(60,270,85,25,"#9aabb1")
+    # laser challenge area and animated beams
+    if mission >= 1 and mission < 2:
+        rect(280,150,525,300,"#293944")
+        text("LASER SECURITY ZONE",542,142,14,"#ffb36b","center")
+        for beam in lasers:
+            active = ((tick + beam["offset"]) % beam["period"]) < beam["on"]
+            # glow + beam line
+            if active:
+                rect(beam["x1"],beam["y"]-5,beam["x2"]-beam["x1"],10,"#7d2029")
+                rect(beam["x1"],beam["y"]-2,beam["x2"]-beam["x1"],4,"#ff334f")
+                for bx in range(beam["x1"],beam["x2"],48):
+                    rect(bx,beam["y"]-9,3,18,"#ff9aa7")
+            else:
+                rect(beam["x1"],beam["y"]-2,beam["x2"]-beam["x1"],4,"#52616b")
+                text("OFF",beam["x1"]+8,beam["y"]-9,10,"#a9bac4")
     # objects
     for it in items:
         if not it["got"]:
@@ -139,6 +181,8 @@ def draw():
     text(message,24,58,16,"#f7f2e8")
     text(f"المهمات: {mission}/2",W-24,30,16,"#9fe3d0","right")
     text("الحركة: الأسهم أو WASD",W-24,57,13,"#c4d0d7","right")
+    if mission == 1:
+        text(f"محاولات الليزر: {laser_hits}",450,58,13,"#ff9aa7","center")
     if won:
         rect(220,190,460,150,"#101820")
         text("فزتِ! 🎉",450,245,34,"#9fe3d0","center")
